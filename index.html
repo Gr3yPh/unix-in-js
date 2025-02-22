@@ -1,0 +1,1111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>unix in js</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: "Courier New", monospace;
+      /* 更改全局字体 */
+      background-color: black;
+      color: white;
+      margin: 0;
+      padding: 10px;
+      width: auto;
+      height: 100vh;
+    }
+
+    #terminal {
+      width: 100%;
+      height: 90vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .prompt {
+      color: #00ff00;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      /* 设置行距为 1 */
+      margin: 0;
+      /* 移除默认的外边距 */
+      padding: 0;
+      /* 移除默认的内边距 */
+    }
+
+    .prompt-text {
+      margin-right: 5px;
+      /* 调整提示符与输入框的间距 */
+    }
+
+    .input-box {
+      background: transparent;
+      color: #ffff00;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      font-family: "Courier New", monospace;
+      flex: 1;
+      margin: 0;
+      /* 移除默认的外边距 */
+      padding: 0;
+      /* 移除默认的内边距 */
+    }
+
+    .command {
+      color: #ffff00;
+      margin-left: 5px;
+      /* 调整命令与提示符的间距 */
+    }
+
+    .command {
+      color: #ffff00;
+    }
+
+    .output {
+      color: #ffffff;
+    }
+
+    .error {
+      color: #ff0000;
+    }
+
+    .browser-window {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      width: 600px;
+      height: 400px;
+      z-index: 1000;
+      padding: 10px;
+      overflow: hidden;
+      resize: both;
+      font-family: "Courier New", monospace;
+      /* 确保窗口字体一致 */
+    }
+
+    .browser-title {
+      text-align: center;
+      font-weight: bold;
+      user-select: none;
+      padding: 5px;
+    }
+
+    .browser-frame {
+      width: 100%;
+      height: calc(100% - 30px);
+      /* 留出标题栏空间 */
+      border: none;
+    }
+
+    .resize-handle {
+      width: 15px;
+      height: 15px;
+      background-color: #00ff00;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      cursor: se-resize;
+    }
+
+    .notepad-window {
+      width: 600px;
+      height: 400px;
+    }
+
+    .notepad-titlebar {
+      padding: 5px;
+      background-color: black;
+      color: #00ff00;
+      border-bottom: 1px solid #00ff00;
+      user-select: none;
+      cursor: move;
+    }
+
+    .notepad-toolbar {
+      display: flex;
+      align-items: center;
+      padding: 5px;
+      background-color: black;
+      border-bottom: 1px solid #00ff00;
+    }
+
+    .notepad-toolbar button {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px 10px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
+    .notepad-toolbar button:hover {
+      background-color: #00ff00;
+      color: black;
+    }
+
+    .notepad-filename {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px;
+      flex: 1;
+      margin-right: 5px;
+    }
+
+    .notepad-textarea {
+      width: 100%;
+      height: calc(100% - 80px);
+      background-color: black;
+      color: #00ff00;
+      border: none;
+      padding: 10px;
+      font-family: "Courier New", monospace;
+      resize: none;
+    }
+
+    .notepad-toolbar button,
+    .notepad-filename,
+    .notepad-textarea {
+      font-family: "Courier New", monospace;
+    }
+
+    .msgbox-window {
+      width: auto;
+      height: auto;
+      max-width: 80%;
+      max-height: 80%;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .msgbox-titlebar {
+      padding: 5px;
+      background-color: black;
+      color: #00ff00;
+      border-bottom: 1px solid #00ff00;
+      user-select: none;
+      cursor: move;
+    }
+
+    .msgbox-content {
+      padding: 10px;
+      color: #00ff00;
+    }
+
+    .msgbox-ok {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      padding: 5px 10px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    .msgbox-ok:hover {
+      background-color: #00ff00;
+      color: black;
+    }
+
+    /* 滚动条样式 */
+    ::-webkit-scrollbar {
+      width: 12px;
+      background-color: black;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #000000;
+      border: 2px solid #000000;
+    }
+
+    ::-webkit-scrollbar-track {
+      background-color: black;
+    }
+
+    .context-menu {
+      display: none;
+      position: absolute;
+      background-color: black;
+      border: 1px solid #00ff00;
+      padding: 5px;
+      z-index: 10000;
+    }
+
+    .context-menu button {
+      display: block;
+      width: 100%;
+      background-color: black;
+      color: #00ff00;
+      border: none;
+      padding: 5px 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .context-menu button:hover {
+      background-color: #00ff00;
+      color: black;
+    }
+
+    /* 全局 input、button 和 textarea 样式 */
+    input,
+    button,
+    textarea {
+      background-color: black;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      font-family: "Courier New", monospace;
+      padding: 5px;
+      margin: 2px;
+    }
+
+    input:focus,
+    button:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #00ff00;
+    }
+
+    button:hover {
+      background-color: #00ff00;
+      color: black;
+      cursor: pointer;
+    }
+
+    textarea {
+      resize: none;
+      /* 禁止调整大小 */
+    }
+  </style>
+  <link rel="stylesheet" href="https://pyscript.net/releases/2025.2.3/core.css">
+  <script type="module" src="https://pyscript.net/releases/2025.2.3/core.js"></script>
+</head>
+
+<body>
+  <div id="terminal"></div>
+  <script>
+    const terminal = document.getElementById('terminal');
+    let currentDir = '/';  // 默认路径为根目录
+    const processes = {};  // 存储进程信息
+    const commandHistory = []; // 命令历史
+    let historyIndex = -1; // 当前回滚的历史索引
+
+    const commands = {
+      help: () => `
+Available commands:
+pwd    - Shows the current working directory
+touch  - Creates a new file
+ls     - Lists files in the current directory
+mkdir  - Creates a new directory
+rm     - Removes a file
+rmdir  - Removes a directory
+cd     - Changes the current directory
+uijbrowser - Opens an embedded browser window with the specified URL
+ps     - Lists current processes
+kill   - Kills a process by pid
+about  - Shows information about the project
+cat    - Displays the contents of a file
+echo   - Outputs text or writes to a file (use > to overwrite, >> to append)
+notepad - Opens a notepad window
+msgbox - Displays a message box
+node   - Runs a JavaScript file
+shutdown - Shuts down the system
+exit   - Alias for shutdown
+cp     - Copies a file
+mv     - Moves or renames a file
+cmatrix - Displays a matrix rain effect (press Ctrl+C to exit)
+python - Runs a Python file (Still testing. I guess there's something wrong with it)
+  `,
+      clear: () => {
+        terminal.innerHTML = '';  // 清空终端内容
+        return null;
+      },
+      echo: (args) => {
+        if (args.length === 0) return ''; // 如果没有参数，返回空
+
+        // 检查是否是覆盖或追加文件内容
+        const redirectIndex = args.findIndex(arg => arg === '>' || arg === '>>');
+        if (redirectIndex !== -1) {
+          const text = args.slice(0, redirectIndex).join(' '); // 获取要写入的文本
+          const filename = args[redirectIndex + 1]; // 获取文件名
+          const fileSystem = getFileSystem();
+          const contents = getDirectoryContents(fileSystem, currentDir);
+
+          if (!contents || !contents[filename] || contents[filename].type !== 'file') {
+            return `echo: ${filename}: No such file`;
+          }
+
+          if (args[redirectIndex] === '>') {
+            // 覆盖文件内容
+            contents[filename].content = text;
+          } else if (args[redirectIndex] === '>>') {
+            // 追加文件内容
+            contents[filename].content = (contents[filename].content || '') + '\n' + text;
+          }
+          saveFileSystem(fileSystem);
+          return ''; // 不输出任何内容
+        }
+
+        // 如果没有重定向，直接输出文本
+        return args.join(' ');
+      },
+      uijbrowser: (args) => {
+        if (args.length === 0) return 'Usage: uijbrowser <URL>';
+        const pid = openWindow(`
+      <div class="browser-title">Unix in JS Browser</div>
+      <iframe class="browser-frame" src="${args[0]}" frameborder="0"></iframe>
+    `, 'uijbrowser');
+        return `Opening embedded window for: ${args[0]} with pid: ${pid}`;
+      },
+      ps: () => {
+        let output = 'PID   COMMAND\n';
+        for (const pid in processes) {
+          output += `${pid}   ${processes[pid].command}\n`;
+        }
+        return output || 'No processes running.';
+      },
+      kill: (args) => {
+        if (args.length === 0) return 'Usage: kill <PID>';
+        const pid = args[0];
+        if (processes[pid]) {
+          if (processes[pid].window) {
+            processes[pid].window.remove(); // 如果是一个窗口进程，关闭窗口
+          }
+          delete processes[pid];
+          return `Killed process ${pid}`;
+        }
+        return `No such process with pid ${pid}`;
+      },
+      about: () => `
+Unix in JS v2025.3 by Gr3yPh4ntom
+Copyright 2025 © All rights reserved.
+This is an open source project and you could copy it without following any license or permission.
+All the code is in the one index.html file.
+  `,
+      pwd: () => currentDir,  // 显示当前路径
+      touch: (args) => {
+        if (args.length === 0) return 'Usage: touch <filename>';
+        return createFile(args[0]);
+      },
+      ls: () => listFiles(),
+      mkdir: (args) => {
+        if (args.length === 0) return 'Usage: mkdir <dirname>';
+        return createDirectory(args[0]);
+      },
+      rm: (args) => {
+        if (args.length === 0) return 'Usage: rm <filename>';
+        return removeFile(args[0]);
+      },
+      rmdir: (args) => {
+        if (args.length === 0) return 'Usage: rmdir <dirname>';
+        return removeDirectory(args[0]);
+      },
+      cd: (args) => {
+        if (args.length === 0) return 'Usage: cd <directory>';
+        const dirName = args[0];
+
+        // 处理根目录
+        if (dirName === '/') {
+          currentDir = '/';
+          return null;
+        }
+
+        // 处理父目录
+        if (dirName === '..') {
+          const dirs = currentDir.split('/').filter(Boolean); // 去掉空字符串
+          if (dirs.length > 0) {
+            dirs.pop(); // 去掉最后一部分
+            currentDir = `/${dirs.join('/')}`; // 重新拼接路径
+          }
+          return null;
+        }
+
+        // 处理普通目录
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+
+        if (contents && contents[dirName] && contents[dirName].type === 'directory') {
+          currentDir = `${currentDir}/${dirName}`.replace(/\/+/g, '/'); // 规范化路径
+          return null;
+        }
+        return `No such directory: ${dirName}`;
+      },
+      cat: (args) => {
+        if (args.length === 0) return 'Usage: cat <filename>';
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+        const filename = args[0];
+
+        if (contents && contents[filename] && contents[filename].type === 'file') {
+          return contents[filename].content || '(empty file)';
+        }
+        return `cat: ${filename}: No such file`;
+      },
+      notepad: (args) => {
+        const filename = args[0] || ''; // 如果未指定文件名，则为空
+        let fileContent = '';
+
+        // 如果指定了文件名，尝试加载文件内容
+        if (filename) {
+          const fileSystem = getFileSystem();
+          const contents = getDirectoryContents(fileSystem, currentDir);
+          if (contents && contents[filename] && contents[filename].type === 'file') {
+            fileContent = contents[filename].content || '';
+          }
+        }
+
+        const pid = openWindow(`
+      <div class="notepad-titlebar">${filename || 'Untitled'}</div>
+      <div class="notepad-toolbar">
+        <button class="notepad-save">Save</button>
+        ${filename ? '' : '<input type="text" class="notepad-filename" placeholder="Enter filename" />'}
+        <button class="notepad-exit">Exit</button>
+      </div>
+      <textarea class="notepad-textarea" placeholder="Start typing...">${fileContent}</textarea>
+    `, 'notepad', filename); // 传递初始文件名
+        return `Notepad started with pid: ${pid}`;
+      },
+      msgbox: (args) => {
+        if (args.length < 2) return 'Usage: msgbox <title> <message>';
+        const title = args[0];
+        const message = args.slice(1).join(' ');
+        const pid = openWindow(`
+      <div class="msgbox-titlebar">${title}</div>
+      <div class="msgbox-content">${message}</div>
+      <button class="msgbox-ok">OK</button>
+    `, 'msgbox'); // 标记为 msgbox
+        return '';
+      },
+      node: (args) => {
+        if (args.length === 0) return 'Usage: node <filename>';
+        const filename = args[0];
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+
+        if (!contents || !contents[filename] || contents[filename].type !== 'file') {
+          return `node: ${filename}: No such file`;
+        }
+
+        try {
+          const code = contents[filename].content;
+
+          // 捕获 console.log 的输出
+          let consoleOutput = '';
+          const originalConsoleLog = console.log;
+          console.log = function (...args) {
+            consoleOutput += args.join(' ') + '\n';
+          };
+
+          // 执行代码
+          eval(code);
+
+          // 恢复 console.log 的原始功能
+          console.log = originalConsoleLog;
+
+          return consoleOutput.trim(); // 返回捕获的输出
+        } catch (error) {
+          return `Error in ${filename}: ${error.message}`;
+        }
+      },
+      python: (args) => {
+        if (args.length === 0) return 'Usage: python <filename>';
+        const filename = args[0];
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+
+        if (!contents || !contents[filename] || contents[filename].type !== 'file') {
+          return `python: ${filename}: No such file`;
+        }
+
+        try {
+          const code = contents[filename].content;
+
+          // 创建一个 PyScript 容器
+          const pyScriptContainer = document.createElement('div');
+          pyScriptContainer.id = 'py-script-container';
+          document.body.appendChild(pyScriptContainer);
+
+          // 动态加载 PyScript
+          const script = document.createElement('script');
+          script.type = 'module';
+          script.src = 'https://pyscript.net/releases/2025.2.3/core.js';
+          script.onload = () => {
+            // 创建一个 <mpy-script> 标签并插入 Python 代码
+            const mpyScript = document.createElement('mpy-script');
+            mpyScript.textContent = code;
+
+            // 捕获 PyScript 的输出
+            const outputContainer = document.createElement('div');
+            outputContainer.id = 'py-output';
+            pyScriptContainer.appendChild(mpyScript);
+            pyScriptContainer.appendChild(outputContainer);
+
+            // 监听 PyScript 的输出
+            const observer = new MutationObserver(() => {
+              const output = outputContainer.innerText.trim();
+              if (output) {
+                const outputElement = document.createElement('div');
+                outputElement.classList.add('output');
+                outputElement.textContent = output;
+                terminal.appendChild(outputElement);
+                terminal.scrollTop = terminal.scrollHeight; // 滚动到底部
+              }
+            });
+
+            observer.observe(outputContainer, { childList: true, subtree: true });
+
+            // 等待 PyScript 执行完成
+            setTimeout(() => {
+              observer.disconnect(); // 停止监听
+              pyScriptContainer.remove(); // 移除 PyScript 容器
+            }, 1000); // 等待 1 秒
+          };
+          document.head.appendChild(script);
+        } catch (error) {
+          return `Error in ${filename}: ${error.message}`;
+        }
+      },
+      shutdown: () => {
+        terminal.innerHTML = 'Shutting down...';
+        setTimeout(() => {
+          // 全黑背景
+          document.body.style.backgroundColor = 'black';
+          document.body.innerHTML = ''; // 清空页面内容
+
+          // 隐藏鼠标箭头
+          document.body.style.cursor = 'none';
+        }, 3000); // 3 秒后执行
+        return null;
+      },
+      exit: () => commands.shutdown(), // exit 是 shutdown 的别名
+      cp: (args) => {
+        if (args.length < 2) return 'Usage: cp <source> <destination>';
+        const source = args[0];
+        const destination = args[1];
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+
+        if (!contents || !contents[source] || contents[source].type !== 'file') {
+          return `cp: ${source}: No such file`;
+        }
+
+        // 检查目标文件是否已存在
+        if (contents[destination]) {
+          return `cp: ${destination}: File already exists`;
+        }
+
+        // 复制文件
+        contents[destination] = {
+          type: 'file',
+          content: contents[source].content,
+          createdAt: new Date().toISOString(),
+        };
+        saveFileSystem(fileSystem);
+        return;
+      },
+      mv: (args) => {
+        if (args.length < 2) return 'Usage: mv <source> <destination>';
+        const source = args[0];
+        const destination = args[1];
+        const fileSystem = getFileSystem();
+        const contents = getDirectoryContents(fileSystem, currentDir);
+
+        if (!contents || !contents[source]) {
+          return `mv: ${source}: No such file or directory`;
+        }
+
+        // 检查目标文件是否已存在
+        if (contents[destination]) {
+          return `mv: ${destination}: File or directory already exists`;
+        }
+
+        // 移动或重命名文件
+        contents[destination] = contents[source];
+        delete contents[source];
+        saveFileSystem(fileSystem);
+        return;
+      },
+      cmatrix: () => {
+        // 清空终端
+        terminal.innerHTML = '';
+
+        // 隐藏滚动条
+        terminal.style.overflow = 'hidden';
+
+        // 创建矩阵雨效果
+        const matrixContainer = document.createElement('div');
+        matrixContainer.style.position = 'fixed';
+        matrixContainer.style.top = '0';
+        matrixContainer.style.left = '0';
+        matrixContainer.style.width = '100%';
+        matrixContainer.style.height = '100%';
+        matrixContainer.style.backgroundColor = 'black';
+        matrixContainer.innerHTML = `
+      <canvas id="matrix"></canvas>
+      
+    `;
+        document.body.appendChild(matrixContainer);
+
+        // 矩阵雨效果代码
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas(); // 初始化 canvas 大小
+
+        const chars = '01';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let x = 0; x < columns; x++) {
+          drops[x] = 1;
+        }
+
+        function drawMatrix() {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.fillStyle = '#0F0';
+          ctx.font = fontSize + 'px monospace';
+
+          for (let i = 0; i < drops.length; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+              drops[i] = 0;
+            }
+            drops[i]++;
+          }
+        }
+
+        // 启动效果
+        const intervalId = setInterval(drawMatrix, 50);
+
+        // 窗口调整时重置 canvas
+        window.addEventListener('resize', resizeCanvas);
+
+        // 监听 Ctrl+C 退出
+        const handleKeyDown = (e) => {
+          if (e.ctrlKey && e.key === 'c') {
+            clearInterval(intervalId); // 停止矩阵雨效果
+            document.body.removeChild(matrixContainer); // 移除矩阵雨
+            terminal.style.overflow = 'auto'; // 恢复滚动条
+            printPrompt(); // 恢复终端提示符
+            document.removeEventListener('keydown', handleKeyDown); // 移除事件监听器
+          }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return null; // 不显示任何输出
+      },
+
+    };
+
+    // 检查文件系统是否已经初始化
+    if (!localStorage.getItem('filesystemConfigured')) {
+      initializeFileSystem();
+      localStorage.setItem('filesystemConfigured', 'true');
+    }
+
+    // 初始化文件系统
+    function initializeFileSystem() {
+      const fs = {
+        '/': {
+          type: 'directory',
+          contents: {},
+          createdAt: new Date().toISOString()
+        }
+      };
+      localStorage.setItem('fileSystem', JSON.stringify(fs));
+    }
+
+
+    function openWindow(html, type = 'custom', filename = '') {
+      const pid = Math.floor(Math.random() * 1000);
+      const windowElement = document.createElement('div');
+      windowElement.classList.add('browser-window', `${type}-window`);
+      windowElement.innerHTML = html;
+      document.body.appendChild(windowElement);
+
+      // 阻止事件冒泡
+      windowElement.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+      });
+
+      // 使窗口可拖动（仅限于标题栏）
+      const titleBar = windowElement.querySelector('.browser-title, .notepad-titlebar, .msgbox-titlebar, .custom-titlebar');
+      if (titleBar) {
+        titleBar.addEventListener('mousedown', (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+          let offsetX = e.clientX - windowElement.offsetLeft;
+          let offsetY = e.clientY - windowElement.offsetTop;
+
+          const mouseMoveHandler = (moveEvent) => {
+            windowElement.style.left = `${moveEvent.clientX - offsetX}px`;
+            windowElement.style.top = `${moveEvent.clientY - offsetY}px`;
+          };
+
+          document.addEventListener('mousemove', mouseMoveHandler);
+          document.addEventListener('mouseup', () => {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+          }, { once: true });
+        });
+      }
+
+      // 如果是 msgbox，居中显示并自动调整大小
+      if (type === 'msgbox') {
+        windowElement.classList.add('msgbox-window');
+        windowElement.style.width = 'auto';
+        windowElement.style.height = 'auto';
+        windowElement.style.left = '50%';
+        windowElement.style.top = '50%';
+        windowElement.style.transform = 'translate(-50%, -50%)';
+        windowElement.style.maxWidth = '80%';
+        windowElement.style.maxHeight = '80%';
+      }
+
+      if (!type === 'notepad' || !type === 'browser') {
+        windowElement.style.width = 'auto';
+        windowElement.style.height = 'auto';
+        windowElement.style.maxWidth = '80%';
+        windowElement.style.maxHeight = '80%';
+      }
+
+      // 如果是 msgbox，添加 OK 按钮的关闭功能
+      const okButton = windowElement.querySelector('.msgbox-ok');
+      if (okButton) {
+        okButton.addEventListener('click', () => {
+          windowElement.remove(); // 关闭窗口
+          delete processes[pid]; // 删除进程
+        });
+      }
+
+      // 如果是记事本，添加保存和退出功能
+      const saveButton = windowElement.querySelector('.notepad-save');
+      const filenameInput = windowElement.querySelector('.notepad-filename');
+      const textarea = windowElement.querySelector('.notepad-textarea');
+
+      if (saveButton && textarea) {
+        saveButton.addEventListener('click', () => {
+          const saveFilename = filename || (filenameInput ? filenameInput.value.trim() : '');
+          if (!saveFilename) {
+            msgbox('Error', 'Please enter a filename.');
+            return;
+          }
+
+          const fileSystem = getFileSystem();
+          const contents = getDirectoryContents(fileSystem, currentDir);
+
+          if (!contents) {
+            msgbox('Error', 'Unable to access file system.');
+            return;
+          }
+
+          // 保存或更新文件内容
+          contents[saveFilename] = {
+            type: 'file',
+            content: textarea.value,
+            createdAt: contents[saveFilename] ? contents[saveFilename].createdAt : new Date().toISOString(), // 保留原创建时间
+          };
+          saveFileSystem(fileSystem);
+
+          // 显示保存成功的弹窗
+          msgbox('Success', `File "${saveFilename}" saved successfully.`);
+        });
+
+        const exitButton = windowElement.querySelector('.notepad-exit');
+        if (exitButton) {
+          exitButton.addEventListener('click', () => {
+            windowElement.remove(); // 关闭窗口
+            delete processes[pid]; // 删除进程
+          });
+        }
+      }
+
+      // 如果是浏览器窗口，确保 iframe 不会干扰终端输入
+      const iframe = windowElement.querySelector('.browser-frame');
+      if (iframe) {
+        iframe.addEventListener('mousedown', (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+        });
+      }
+
+      // 将窗口与进程关联
+      processes[pid] = { window: windowElement, command: type };
+      return pid;
+    }
+
+
+    // 获取文件系统
+    function getFileSystem() {
+      return JSON.parse(localStorage.getItem('fileSystem'));
+    }
+
+    // 保存文件系统
+    function saveFileSystem(fileSystem) {
+      localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
+    }
+
+    // 列出当前目录的文件和文件夹
+    function listFiles() {
+      const fileSystem = getFileSystem();
+      const currentDirContents = getDirectoryContents(fileSystem, currentDir);
+
+      if (!currentDirContents) return 'No files or directories in this path.';
+
+      const files = Object.keys(currentDirContents);
+      const numItems = files.length;
+
+      // 输出格式：显示文件数
+      let output = `${numItems} items at ${currentDir}\n`;
+
+      // 遍历并输出文件和目录的详细信息
+      files.forEach(file => {
+        // 过滤掉根目录本身
+        if (file === '/') return;
+
+        const fileInfo = currentDirContents[file];
+        const type = fileInfo.type === 'directory' ? '<DIR>' : '<FIL>';
+        const timestamp = new Date(fileInfo.createdAt).toLocaleString();
+        output += `${timestamp} ${type} ${file}\n`;
+      });
+
+      return output;
+    }
+
+    // 获取当前目录下的内容
+    function getDirectoryContents(fileSystem, dirPath) {
+      const dirs = dirPath.split('/').filter(Boolean);
+      let current = fileSystem;
+      for (const dir of dirs) {
+        if (!current[dir] || current[dir].type !== 'directory') return null;
+        current = current[dir].contents;
+      }
+      return current;
+    }
+
+    // 改变当前目录
+    function changeDirectory(dirName) {
+      if (dirName === '..') {
+        const dirs = currentDir.split('/').filter(Boolean);
+        dirs.pop();  // 去掉最后一部分
+        currentDir = `/${dirs.join('/')}`;
+        return `Changed directory to ${currentDir}`;
+      }
+
+      if (dirName === '/' || dirName === '..') return 'Cannot create or navigate to `..` or `/` directory.';
+
+      const fileSystem = getFileSystem();
+      const contents = getDirectoryContents(fileSystem, currentDir);
+
+      if (contents && contents[dirName] && contents[dirName].type === 'directory') {
+        currentDir = `${currentDir}/${dirName}`.replace(/\/+/g, '/');  // 规范化路径
+        return `Changed directory to ${currentDir}`;
+      }
+      return `No such directory: ${dirName}`;
+    }
+
+    // 创建文件
+    function createFile(filename) {
+      const fileSystem = getFileSystem();
+      const contents = getDirectoryContents(fileSystem, currentDir);
+
+      if (contents && contents[filename]) {
+        return `File ${filename} already exists.`;
+      }
+
+      contents[filename] = { type: 'file', content: '', createdAt: new Date().toISOString() };
+      saveFileSystem(fileSystem);
+      return;
+    }
+
+    // 创建目录
+    function createDirectory(dirname) {
+      if (dirname === '/' || dirname === '..') return 'Cannot create directory with name `/` or `..`.';
+
+      const fileSystem = getFileSystem();
+      const contents = getDirectoryContents(fileSystem, currentDir);
+
+      if (contents && contents[dirname]) {
+        return `Directory ${dirname} already exists.`;
+      }
+
+      contents[dirname] = { type: 'directory', contents: {}, createdAt: new Date().toISOString() };
+      saveFileSystem(fileSystem);
+      return;
+    }
+
+    // 删除文件
+    function removeFile(filename) {
+      const fileSystem = getFileSystem();
+      const contents = getDirectoryContents(fileSystem, currentDir);
+
+      if (contents && contents[filename] && contents[filename].type === 'file') {
+        delete contents[filename];
+        saveFileSystem(fileSystem);
+        return;
+      }
+      return `No such file: ${filename}`;
+    }
+
+    // 删除目录
+    function removeDirectory(dirname) {
+      const fileSystem = getFileSystem();
+      const contents = getDirectoryContents(fileSystem, currentDir);
+
+      if (contents && contents[dirname] && contents[dirname].type === 'directory') {
+        delete contents[dirname];
+        saveFileSystem(fileSystem);
+        return;
+      }
+      return `No such directory: ${dirname}`;
+    }
+
+    // 打印命令提示符
+    function printPrompt() {
+      const promptContainer = document.createElement('div');
+      promptContainer.classList.add('prompt');
+      const promptText = document.createElement('span');
+      promptText.classList.add('prompt-text');
+      promptText.textContent = `${currentDir} $ `; // 显示当前路径
+      promptContainer.appendChild(promptText);
+
+      const inputField = document.createElement('input');
+      inputField.type = 'text';
+      inputField.classList.add('input-box');
+      promptContainer.appendChild(inputField);
+
+      terminal.appendChild(promptContainer); // 追加到终端内容的末尾
+      terminal.scrollTop = terminal.scrollHeight; // 滚动到底部
+      inputField.focus();
+
+      inputField.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          processCommand(inputField.value.trim(), promptContainer);
+        }
+        if (event.key === 'ArrowUp') {
+          if (historyIndex > 0) {
+            historyIndex--;
+            inputField.value = commandHistory[historyIndex];
+          }
+        }
+        if (event.key === 'ArrowDown') {
+          if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            inputField.value = commandHistory[historyIndex];
+          } else {
+            historyIndex = commandHistory.length;
+            inputField.value = '';
+          }
+        }
+      });
+    }
+
+    function processCommand(input, promptContainer) {
+      if (input === '') {
+        terminal.removeChild(promptContainer);
+        printPrompt();
+        return;
+      }
+
+      commandHistory.push(input);
+      historyIndex = commandHistory.length;
+
+      const [command, ...args] = input.split(' ');
+      const cmd = commands[command];
+      const inputText = document.createElement('span');
+      inputText.textContent = input;
+      inputText.classList.add('command');
+      promptContainer.innerHTML = `${currentDir} $ `; // 显示当前路径
+      promptContainer.appendChild(inputText);
+
+      const result = cmd ? cmd(args) : `command not found: ${command}`;
+      if (result !== null) {
+        const output = document.createElement('div');
+        output.classList.add(cmd ? 'output' : 'error');
+        output.textContent = result;
+        terminal.appendChild(output);
+      }
+
+      // 如果命令不是 cmatrix，打印提示符
+      if (command !== 'cmatrix') {
+        printPrompt();
+      }
+    }
+
+    // 处理命令
+    function processCommand(input, promptContainer) {
+      if (input === '') {
+        terminal.removeChild(promptContainer);
+        printPrompt();
+        return;
+      }
+
+      commandHistory.push(input);
+      historyIndex = commandHistory.length;
+
+      const [command, ...args] = input.split(' ');
+      const cmd = commands[command];
+      const inputText = document.createElement('span');
+      inputText.textContent = input;
+      inputText.classList.add('command');
+      promptContainer.innerHTML = `${currentDir} $ `; // 显示当前路径
+      promptContainer.appendChild(inputText);
+
+      const result = cmd ? cmd(args) : `command not found: ${command}`;
+      if (result !== null) {
+        const output = document.createElement('div');
+        output.classList.add(cmd ? 'output' : 'error');
+        output.textContent = result;
+        terminal.appendChild(output);
+      }
+
+      // 如果命令不是 cmatrix，打印提示符
+      if (command !== 'cmatrix') {
+        printPrompt();
+      }
+    }
+
+    function msgbox(title, content) {
+      const pid = openWindow(`
+      <div class="msgbox-titlebar">${title}</div>
+      <div class="msgbox-content">${content}</div>
+      <button class="msgbox-ok">OK</button>
+    `, 'msgbox');
+    }
+
+    window.addEventListener('load', () => {
+      // 显示欢迎语
+      const welcomeMessage = document.createElement('div');
+      welcomeMessage.classList.add('output');
+      welcomeMessage.innerHTML = `
+    Welcome to Unix in JS v2025.3 by Gr3yPh4ntom<br>
+    Type "help" or "about" for more information.
+  `;
+      terminal.appendChild(welcomeMessage);
+
+      // 显示终端提示符
+      printPrompt();
+    });
+
+  </script>
+</body>
+
+</html>
