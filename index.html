@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -721,6 +720,9 @@ All the code is in the one index.html file.
     if (!localStorage.getItem('filesystemConfigured')) {
       initializeFileSystem();
       localStorage.setItem('filesystemConfigured', 'true');
+    } else {
+      // 如果文件系统已经存在，检查并修复根目录包含自身的问题
+      cleanupFileSystem();
     }
 
     // 初始化文件系统
@@ -728,13 +730,26 @@ All the code is in the one index.html file.
       const fs = {
         '/': {
           type: 'directory',
-          contents: {},
+          contents: {},  // 空的，不包含任何文件
           createdAt: new Date().toISOString()
         }
       };
       localStorage.setItem('fileSystem', JSON.stringify(fs));
     }
 
+    // 清理文件系统，移除根目录中的自身引用
+    function cleanupFileSystem() {
+      const fileSystem = getFileSystem();
+      if (fileSystem && fileSystem['/'] && fileSystem['/'].contents) {
+        const rootContents = fileSystem['/'].contents;
+        // 如果根目录包含自身，移除它
+        if (rootContents['/']) {
+          delete rootContents['/'];
+          saveFileSystem(fileSystem);
+          console.log('Cleaned up filesystem: removed root self-reference');
+        }
+      }
+    }
 
     function openWindow(html, type = 'custom', filename = '') {
       const pid = Math.floor(Math.random() * 1000);
@@ -877,9 +892,6 @@ All the code is in the one index.html file.
 
       // 遍历并输出文件和目录的详细信息
       files.forEach(file => {
-        // 过滤掉根目录本身
-        if (file === '/') return;
-
         const fileInfo = currentDirContents[file];
         const type = fileInfo.type === 'directory' ? '<DIR>' : '<FIL>';
         const timestamp = new Date(fileInfo.createdAt).toLocaleString();
@@ -1017,39 +1029,6 @@ All the code is in the one index.html file.
       });
     }
 
-    function processCommand(input, promptContainer) {
-      if (input === '') {
-        terminal.removeChild(promptContainer);
-        printPrompt();
-        return;
-      }
-
-      commandHistory.push(input);
-      historyIndex = commandHistory.length;
-
-      const [command, ...args] = input.split(' ');
-      const cmd = commands[command];
-      const inputText = document.createElement('span');
-      inputText.textContent = input;
-      inputText.classList.add('command');
-      promptContainer.innerHTML = `${currentDir} $ `; // 显示当前路径
-      promptContainer.appendChild(inputText);
-
-      const result = cmd ? cmd(args) : `command not found: ${command}`;
-      if (result !== null) {
-        const output = document.createElement('div');
-        output.classList.add(cmd ? 'output' : 'error');
-        output.textContent = result;
-        terminal.appendChild(output);
-      }
-
-      // 如果命令不是 cmatrix，打印提示符
-      if (command !== 'cmatrix') {
-        printPrompt();
-      }
-    }
-
-    // 处理命令
     function processCommand(input, promptContainer) {
       if (input === '') {
         terminal.removeChild(promptContainer);
