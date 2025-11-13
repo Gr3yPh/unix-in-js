@@ -8,7 +8,6 @@
   <style>
     body {
       font-family: monospace;
-      /* 更改全局字体 */
       background-color: black;
       color: white;
       margin: 0;
@@ -30,16 +29,12 @@
       display: flex;
       align-items: center;
       line-height: 1;
-      /* 设置行距为 1 */
       margin: 0;
-      /* 移除默认的外边距 */
       padding: 0;
-      /* 移除默认的内边距 */
     }
 
     .prompt-text {
       margin-right: 5px;
-      /* 调整提示符与输入框的间距 */
     }
 
     .input-box {
@@ -51,19 +46,12 @@
       font-family: monospace;
       flex: 1;
       margin: 0;
-      /* 移除默认的外边距 */
       padding: 0;
-      /* 移除默认的内边距 */
     }
 
     .command {
       color: #ffff00;
       margin-left: 5px;
-      /* 调整命令与提示符的间距 */
-    }
-
-    .command {
-      color: #ffff00;
     }
 
     .output {
@@ -88,7 +76,6 @@
       overflow: hidden;
       resize: both;
       font-family: monospace;
-      /* 确保窗口字体一致 */
     }
 
     .browser-title {
@@ -101,7 +88,6 @@
     .browser-frame {
       width: 100%;
       height: calc(100% - 30px);
-      /* 留出标题栏空间 */
       border: none;
     }
 
@@ -215,7 +201,6 @@
       color: black;
     }
 
-    /* 滚动条样式 */
     ::-webkit-scrollbar {
       width: 12px;
       background-color: black;
@@ -255,7 +240,6 @@
       color: black;
     }
 
-    /* 全局 input、button 和 textarea 样式 */
     input,
     button,
     textarea {
@@ -282,7 +266,6 @@
 
     textarea {
       resize: none;
-      /* 禁止调整大小 */
     }
   </style>
   <link rel="stylesheet" href="https://pyscript.net/releases/2025.2.3/core.css">
@@ -293,10 +276,10 @@
   <div id="terminal"></div>
   <script>
     const terminal = document.getElementById('terminal');
-    let currentDir = '/';  // 默认路径为根目录
-    const processes = {};  // 存储进程信息
-    const commandHistory = []; // 命令历史
-    let historyIndex = -1; // 当前回滚的历史索引
+    let currentDir = '/';
+    const processes = {};
+    const commandHistory = [];
+    let historyIndex = -1;
 
     const commands = {
       help: () => `
@@ -325,17 +308,16 @@ cmatrix - Displays a matrix rain effect (press Ctrl+C to exit)
 python - Runs a Python file (Still testing. I guess there's something wrong with it)
   `,
       clear: () => {
-        terminal.innerHTML = '';  // 清空终端内容
+        terminal.innerHTML = '';
         return null;
       },
       echo: (args) => {
-        if (args.length === 0) return ''; // 如果没有参数，返回空
+        if (args.length === 0) return '';
 
-        // 检查是否是覆盖或追加文件内容
         const redirectIndex = args.findIndex(arg => arg === '>' || arg === '>>');
         if (redirectIndex !== -1) {
-          const text = args.slice(0, redirectIndex).join(' '); // 获取要写入的文本
-          const filename = args[redirectIndex + 1]; // 获取文件名
+          const text = args.slice(0, redirectIndex).join(' ');
+          const filename = args[redirectIndex + 1];
           const fileSystem = getFileSystem();
           const contents = getDirectoryContents(fileSystem, currentDir);
 
@@ -344,17 +326,14 @@ python - Runs a Python file (Still testing. I guess there's something wrong with
           }
 
           if (args[redirectIndex] === '>') {
-            // 覆盖文件内容
             contents[filename].content = text;
           } else if (args[redirectIndex] === '>>') {
-            // 追加文件内容
             contents[filename].content = (contents[filename].content || '') + '\n' + text;
           }
           saveFileSystem(fileSystem);
-          return ''; // 不输出任何内容
+          return '';
         }
 
-        // 如果没有重定向，直接输出文本
         return args.join(' ');
       },
       uijbrowser: (args) => {
@@ -377,7 +356,7 @@ python - Runs a Python file (Still testing. I guess there's something wrong with
         const pid = args[0];
         if (processes[pid]) {
           if (processes[pid].window) {
-            processes[pid].window.remove(); // 如果是一个窗口进程，关闭窗口
+            processes[pid].window.remove();
           }
           delete processes[pid];
           return `Killed process ${pid}`;
@@ -385,12 +364,11 @@ python - Runs a Python file (Still testing. I guess there's something wrong with
         return `No such process with pid ${pid}`;
       },
       about: () => `
-Unix in JS v2025.3 by Gr3yPh4ntom
-Copyright 2025 © All rights reserved.
-This is an open source project and you could copy it without following any license or permission.
-All the code is in the one index.html file.
+Unix in JS v2025.4 by Gr3yPh4ntom
+For open source license, view https://github.com/Gr3yPh/unix-in-js
+For author's detailed, view https://gr3yph.gt.tc
   `,
-      pwd: () => currentDir,  // 显示当前路径
+      pwd: () => currentDir,
       touch: (args) => {
         if (args.length === 0) return 'Usage: touch <filename>';
         return createFile(args[0]);
@@ -412,28 +390,25 @@ All the code is in the one index.html file.
         if (args.length === 0) return 'Usage: cd <directory>';
         const dirName = args[0];
 
-        // 处理根目录
         if (dirName === '/') {
           currentDir = '/';
           return null;
         }
 
-        // 处理父目录
         if (dirName === '..') {
-          const dirs = currentDir.split('/').filter(Boolean); // 去掉空字符串
+          const dirs = currentDir.split('/').filter(Boolean);
           if (dirs.length > 0) {
-            dirs.pop(); // 去掉最后一部分
-            currentDir = `/${dirs.join('/')}`; // 重新拼接路径
+            dirs.pop();
+            currentDir = `/${dirs.join('/')}`;
           }
           return null;
         }
 
-        // 处理普通目录
         const fileSystem = getFileSystem();
         const contents = getDirectoryContents(fileSystem, currentDir);
 
         if (contents && contents[dirName] && contents[dirName].type === 'directory') {
-          currentDir = `${currentDir}/${dirName}`.replace(/\/+/g, '/'); // 规范化路径
+          currentDir = `${currentDir}/${dirName}`.replace(/\/+/g, '/');
           return null;
         }
         return `No such directory: ${dirName}`;
@@ -450,10 +425,9 @@ All the code is in the one index.html file.
         return `cat: ${filename}: No such file`;
       },
       notepad: (args) => {
-        const filename = args[0] || ''; // 如果未指定文件名，则为空
+        const filename = args[0] || '';
         let fileContent = '';
 
-        // 如果指定了文件名，尝试加载文件内容
         if (filename) {
           const fileSystem = getFileSystem();
           const contents = getDirectoryContents(fileSystem, currentDir);
@@ -470,7 +444,7 @@ All the code is in the one index.html file.
         <button class="notepad-exit">Exit</button>
       </div>
       <textarea class="notepad-textarea" placeholder="Start typing...">${fileContent}</textarea>
-    `, 'notepad', filename); // 传递初始文件名
+    `, 'notepad', filename);
         return `Notepad started with pid: ${pid}`;
       },
       msgbox: (args) => {
@@ -481,7 +455,7 @@ All the code is in the one index.html file.
       <div class="msgbox-titlebar">${title}</div>
       <div class="msgbox-content">${message}</div>
       <button class="msgbox-ok">OK</button>
-    `, 'msgbox'); // 标记为 msgbox
+    `, 'msgbox');
         return '';
       },
       node: (args) => {
@@ -496,21 +470,16 @@ All the code is in the one index.html file.
 
         try {
           const code = contents[filename].content;
-
-          // 捕获 console.log 的输出
           let consoleOutput = '';
           const originalConsoleLog = console.log;
           console.log = function (...args) {
             consoleOutput += args.join(' ') + '\n';
           };
 
-          // 执行代码
           eval(code);
 
-          // 恢复 console.log 的原始功能
           console.log = originalConsoleLog;
-
-          return consoleOutput.trim(); // 返回捕获的输出
+          return consoleOutput.trim();
         } catch (error) {
           return `Error in ${filename}: ${error.message}`;
         }
@@ -527,28 +496,22 @@ All the code is in the one index.html file.
 
         try {
           const code = contents[filename].content;
-
-          // 创建一个 PyScript 容器
           const pyScriptContainer = document.createElement('div');
           pyScriptContainer.id = 'py-script-container';
           document.body.appendChild(pyScriptContainer);
 
-          // 动态加载 PyScript
           const script = document.createElement('script');
           script.type = 'module';
           script.src = 'https://pyscript.net/releases/2025.2.3/core.js';
           script.onload = () => {
-            // 创建一个 <mpy-script> 标签并插入 Python 代码
             const mpyScript = document.createElement('mpy-script');
             mpyScript.textContent = code;
 
-            // 捕获 PyScript 的输出
             const outputContainer = document.createElement('div');
             outputContainer.id = 'py-output';
             pyScriptContainer.appendChild(mpyScript);
             pyScriptContainer.appendChild(outputContainer);
 
-            // 监听 PyScript 的输出
             const observer = new MutationObserver(() => {
               const output = outputContainer.innerText.trim();
               if (output) {
@@ -556,17 +519,16 @@ All the code is in the one index.html file.
                 outputElement.classList.add('output');
                 outputElement.textContent = output;
                 terminal.appendChild(outputElement);
-                terminal.scrollTop = terminal.scrollHeight; // 滚动到底部
+                terminal.scrollTop = terminal.scrollHeight;
               }
             });
 
             observer.observe(outputContainer, { childList: true, subtree: true });
 
-            // 等待 PyScript 执行完成
             setTimeout(() => {
-              observer.disconnect(); // 停止监听
-              pyScriptContainer.remove(); // 移除 PyScript 容器
-            }, 1000); // 等待 1 秒
+              observer.disconnect();
+              pyScriptContainer.remove();
+            }, 1000);
           };
           document.head.appendChild(script);
         } catch (error) {
@@ -576,16 +538,13 @@ All the code is in the one index.html file.
       shutdown: () => {
         terminal.innerHTML = 'Shutting down...';
         setTimeout(() => {
-          // 全黑背景
           document.body.style.backgroundColor = 'black';
-          document.body.innerHTML = ''; // 清空页面内容
-
-          // 隐藏鼠标箭头
+          document.body.innerHTML = '';
           document.body.style.cursor = 'none';
-        }, 3000); // 3 秒后执行
+        }, 3000);
         return null;
       },
-      exit: () => commands.shutdown(), // exit 是 shutdown 的别名
+      exit: () => commands.shutdown(),
       cp: (args) => {
         if (args.length < 2) return 'Usage: cp <source> <destination>';
         const source = args[0];
@@ -597,19 +556,17 @@ All the code is in the one index.html file.
           return `cp: ${source}: No such file`;
         }
 
-        // 检查目标文件是否已存在
         if (contents[destination]) {
           return `cp: ${destination}: File already exists`;
         }
 
-        // 复制文件
         contents[destination] = {
           type: 'file',
           content: contents[source].content,
           createdAt: new Date().toISOString(),
         };
         saveFileSystem(fileSystem);
-        return;
+        return '';
       },
       mv: (args) => {
         if (args.length < 2) return 'Usage: mv <source> <destination>';
@@ -622,25 +579,19 @@ All the code is in the one index.html file.
           return `mv: ${source}: No such file or directory`;
         }
 
-        // 检查目标文件是否已存在
         if (contents[destination]) {
           return `mv: ${destination}: File or directory already exists`;
         }
 
-        // 移动或重命名文件
         contents[destination] = contents[source];
         delete contents[source];
         saveFileSystem(fileSystem);
-        return;
+        return '';
       },
       cmatrix: () => {
-        // 清空终端
         terminal.innerHTML = '';
-
-        // 隐藏滚动条
         terminal.style.overflow = 'hidden';
 
-        // 创建矩阵雨效果
         const matrixContainer = document.createElement('div');
         matrixContainer.style.position = 'fixed';
         matrixContainer.style.top = '0';
@@ -648,13 +599,9 @@ All the code is in the one index.html file.
         matrixContainer.style.width = '100%';
         matrixContainer.style.height = '100%';
         matrixContainer.style.backgroundColor = 'black';
-        matrixContainer.innerHTML = `
-      <canvas id="matrix"></canvas>
-      
-    `;
+        matrixContainer.innerHTML = '<canvas id="matrix"></canvas>';
         document.body.appendChild(matrixContainer);
 
-        // 矩阵雨效果代码
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
 
@@ -663,7 +610,7 @@ All the code is in the one index.html file.
           canvas.height = window.innerHeight;
         }
 
-        resizeCanvas(); // 初始化 canvas 大小
+        resizeCanvas();
 
         const chars = '01';
         const fontSize = 14;
@@ -692,61 +639,51 @@ All the code is in the one index.html file.
           }
         }
 
-        // 启动效果
         const intervalId = setInterval(drawMatrix, 50);
-
-        // 窗口调整时重置 canvas
         window.addEventListener('resize', resizeCanvas);
 
-        // 监听 Ctrl+C 退出
         const handleKeyDown = (e) => {
           if (e.ctrlKey && e.key === 'c') {
-            clearInterval(intervalId); // 停止矩阵雨效果
-            document.body.removeChild(matrixContainer); // 移除矩阵雨
-            terminal.style.overflow = 'auto'; // 恢复滚动条
-            printPrompt(); // 恢复终端提示符
-            document.removeEventListener('keydown', handleKeyDown); // 移除事件监听器
+            clearInterval(intervalId);
+            document.body.removeChild(matrixContainer);
+            terminal.style.overflow = 'auto';
+            printPrompt();
+            document.removeEventListener('keydown', handleKeyDown);
           }
         };
 
         document.addEventListener('keydown', handleKeyDown);
-
-        return null; // 不显示任何输出
+        return null;
       },
-
     };
 
-    // 检查文件系统是否已经初始化
+    // 初始化文件系统
     if (!localStorage.getItem('filesystemConfigured')) {
       initializeFileSystem();
       localStorage.setItem('filesystemConfigured', 'true');
     } else {
-      // 如果文件系统已经存在，检查并修复根目录包含自身的问题
       cleanupFileSystem();
     }
 
-    // 初始化文件系统
     function initializeFileSystem() {
       const fs = {
         '/': {
           type: 'directory',
-          contents: {},  // 空的，不包含任何文件
+          contents: {},
           createdAt: new Date().toISOString()
         }
       };
       localStorage.setItem('fileSystem', JSON.stringify(fs));
     }
 
-    // 清理文件系统，移除根目录中的自身引用
+    // 修复：清理文件系统中根目录的自引用
     function cleanupFileSystem() {
       const fileSystem = getFileSystem();
       if (fileSystem && fileSystem['/'] && fileSystem['/'].contents) {
         const rootContents = fileSystem['/'].contents;
-        // 如果根目录包含自身，移除它
         if (rootContents['/']) {
           delete rootContents['/'];
           saveFileSystem(fileSystem);
-          console.log('Cleaned up filesystem: removed root self-reference');
         }
       }
     }
@@ -758,16 +695,14 @@ All the code is in the one index.html file.
       windowElement.innerHTML = html;
       document.body.appendChild(windowElement);
 
-      // 阻止事件冒泡
       windowElement.addEventListener('mousedown', (e) => {
         e.stopPropagation();
       });
 
-      // 使窗口可拖动（仅限于标题栏）
       const titleBar = windowElement.querySelector('.browser-title, .notepad-titlebar, .msgbox-titlebar, .custom-titlebar');
       if (titleBar) {
         titleBar.addEventListener('mousedown', (e) => {
-          e.stopPropagation(); // 阻止事件冒泡
+          e.stopPropagation();
           let offsetX = e.clientX - windowElement.offsetLeft;
           let offsetY = e.clientY - windowElement.offsetTop;
 
@@ -783,7 +718,6 @@ All the code is in the one index.html file.
         });
       }
 
-      // 如果是 msgbox，居中显示并自动调整大小
       if (type === 'msgbox') {
         windowElement.classList.add('msgbox-window');
         windowElement.style.width = 'auto';
@@ -795,23 +729,14 @@ All the code is in the one index.html file.
         windowElement.style.maxHeight = '80%';
       }
 
-      if (!type === 'notepad' || !type === 'browser') {
-        windowElement.style.width = 'auto';
-        windowElement.style.height = 'auto';
-        windowElement.style.maxWidth = '80%';
-        windowElement.style.maxHeight = '80%';
-      }
-
-      // 如果是 msgbox，添加 OK 按钮的关闭功能
       const okButton = windowElement.querySelector('.msgbox-ok');
       if (okButton) {
         okButton.addEventListener('click', () => {
-          windowElement.remove(); // 关闭窗口
-          delete processes[pid]; // 删除进程
+          windowElement.remove();
+          delete processes[pid];
         });
       }
 
-      // 如果是记事本，添加保存和退出功能
       const saveButton = windowElement.querySelector('.notepad-save');
       const filenameInput = windowElement.querySelector('.notepad-filename');
       const textarea = windowElement.querySelector('.notepad-textarea');
@@ -832,65 +757,56 @@ All the code is in the one index.html file.
             return;
           }
 
-          // 保存或更新文件内容
           contents[saveFilename] = {
             type: 'file',
             content: textarea.value,
-            createdAt: contents[saveFilename] ? contents[saveFilename].createdAt : new Date().toISOString(), // 保留原创建时间
+            createdAt: contents[saveFilename] ? contents[saveFilename].createdAt : new Date().toISOString(),
           };
           saveFileSystem(fileSystem);
-
-          // 显示保存成功的弹窗
           msgbox('Success', `File "${saveFilename}" saved successfully.`);
         });
 
         const exitButton = windowElement.querySelector('.notepad-exit');
         if (exitButton) {
           exitButton.addEventListener('click', () => {
-            windowElement.remove(); // 关闭窗口
-            delete processes[pid]; // 删除进程
+            windowElement.remove();
+            delete processes[pid];
           });
         }
       }
 
-      // 如果是浏览器窗口，确保 iframe 不会干扰终端输入
       const iframe = windowElement.querySelector('.browser-frame');
       if (iframe) {
         iframe.addEventListener('mousedown', (e) => {
-          e.stopPropagation(); // 阻止事件冒泡
+          e.stopPropagation();
         });
       }
 
-      // 将窗口与进程关联
       processes[pid] = { window: windowElement, command: type };
       return pid;
     }
 
-
-    // 获取文件系统
     function getFileSystem() {
       return JSON.parse(localStorage.getItem('fileSystem'));
     }
 
-    // 保存文件系统
     function saveFileSystem(fileSystem) {
       localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
     }
 
-    // 列出当前目录的文件和文件夹
+    // 修复：listFiles 函数中过滤掉根目录自引用
     function listFiles() {
       const fileSystem = getFileSystem();
       const currentDirContents = getDirectoryContents(fileSystem, currentDir);
 
       if (!currentDirContents) return 'No files or directories in this path.';
 
-      const files = Object.keys(currentDirContents);
+      // 关键修复：过滤掉 '/' 这个键
+      const files = Object.keys(currentDirContents).filter(f => f !== '/');
       const numItems = files.length;
 
-      // 输出格式：显示文件数
       let output = `${numItems} items at ${currentDir}\n`;
 
-      // 遍历并输出文件和目录的详细信息
       files.forEach(file => {
         const fileInfo = currentDirContents[file];
         const type = fileInfo.type === 'directory' ? '<DIR>' : '<FIL>';
@@ -901,7 +817,6 @@ All the code is in the one index.html file.
       return output;
     }
 
-    // 获取当前目录下的内容
     function getDirectoryContents(fileSystem, dirPath) {
       const dirs = dirPath.split('/').filter(Boolean);
       let current = fileSystem;
@@ -912,28 +827,6 @@ All the code is in the one index.html file.
       return current;
     }
 
-    // 改变当前目录
-    function changeDirectory(dirName) {
-      if (dirName === '..') {
-        const dirs = currentDir.split('/').filter(Boolean);
-        dirs.pop();  // 去掉最后一部分
-        currentDir = `/${dirs.join('/')}`;
-        return `Changed directory to ${currentDir}`;
-      }
-
-      if (dirName === '/' || dirName === '..') return 'Cannot create or navigate to `..` or `/` directory.';
-
-      const fileSystem = getFileSystem();
-      const contents = getDirectoryContents(fileSystem, currentDir);
-
-      if (contents && contents[dirName] && contents[dirName].type === 'directory') {
-        currentDir = `${currentDir}/${dirName}`.replace(/\/+/g, '/');  // 规范化路径
-        return `Changed directory to ${currentDir}`;
-      }
-      return `No such directory: ${dirName}`;
-    }
-
-    // 创建文件
     function createFile(filename) {
       const fileSystem = getFileSystem();
       const contents = getDirectoryContents(fileSystem, currentDir);
@@ -944,10 +837,9 @@ All the code is in the one index.html file.
 
       contents[filename] = { type: 'file', content: '', createdAt: new Date().toISOString() };
       saveFileSystem(fileSystem);
-      return;
+      return '';
     }
 
-    // 创建目录
     function createDirectory(dirname) {
       if (dirname === '/' || dirname === '..') return 'Cannot create directory with name `/` or `..`.';
 
@@ -960,10 +852,9 @@ All the code is in the one index.html file.
 
       contents[dirname] = { type: 'directory', contents: {}, createdAt: new Date().toISOString() };
       saveFileSystem(fileSystem);
-      return;
+      return '';
     }
 
-    // 删除文件
     function removeFile(filename) {
       const fileSystem = getFileSystem();
       const contents = getDirectoryContents(fileSystem, currentDir);
@@ -971,12 +862,11 @@ All the code is in the one index.html file.
       if (contents && contents[filename] && contents[filename].type === 'file') {
         delete contents[filename];
         saveFileSystem(fileSystem);
-        return;
+        return '';
       }
       return `No such file: ${filename}`;
     }
 
-    // 删除目录
     function removeDirectory(dirname) {
       const fileSystem = getFileSystem();
       const contents = getDirectoryContents(fileSystem, currentDir);
@@ -984,18 +874,17 @@ All the code is in the one index.html file.
       if (contents && contents[dirname] && contents[dirname].type === 'directory') {
         delete contents[dirname];
         saveFileSystem(fileSystem);
-        return;
+        return '';
       }
       return `No such directory: ${dirname}`;
     }
 
-    // 打印命令提示符
     function printPrompt() {
       const promptContainer = document.createElement('div');
       promptContainer.classList.add('prompt');
       const promptText = document.createElement('span');
       promptText.classList.add('prompt-text');
-      promptText.textContent = `${currentDir} $ `; // 显示当前路径
+      promptText.textContent = `${currentDir} $ `;
       promptContainer.appendChild(promptText);
 
       const inputField = document.createElement('input');
@@ -1003,8 +892,8 @@ All the code is in the one index.html file.
       inputField.classList.add('input-box');
       promptContainer.appendChild(inputField);
 
-      terminal.appendChild(promptContainer); // 追加到终端内容的末尾
-      terminal.scrollTop = terminal.scrollHeight; // 滚动到底部
+      terminal.appendChild(promptContainer);
+      terminal.scrollTop = terminal.scrollHeight;
       inputField.focus();
 
       inputField.addEventListener('keydown', (event) => {
@@ -1044,7 +933,7 @@ All the code is in the one index.html file.
       const inputText = document.createElement('span');
       inputText.textContent = input;
       inputText.classList.add('command');
-      promptContainer.innerHTML = `${currentDir} $ `; // 显示当前路径
+      promptContainer.innerHTML = `${currentDir} $ `;
       promptContainer.appendChild(inputText);
 
       const result = cmd ? cmd(args) : `command not found: ${command}`;
@@ -1055,7 +944,6 @@ All the code is in the one index.html file.
         terminal.appendChild(output);
       }
 
-      // 如果命令不是 cmatrix，打印提示符
       if (command !== 'cmatrix') {
         printPrompt();
       }
@@ -1070,7 +958,6 @@ All the code is in the one index.html file.
     }
 
     window.addEventListener('load', () => {
-      // 显示欢迎语
       const welcomeMessage = document.createElement('div');
       welcomeMessage.classList.add('output');
       welcomeMessage.innerHTML = `
@@ -1078,8 +965,6 @@ All the code is in the one index.html file.
     Type "help" or "about" for more information.
   `;
       terminal.appendChild(welcomeMessage);
-
-      // 显示终端提示符
       printPrompt();
     });
 
